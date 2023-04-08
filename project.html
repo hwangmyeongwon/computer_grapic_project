@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>20185309 황명원 - final project</title>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        attribute vec4 vPosition;
+        attribute vec4 vNormal;
+        attribute vec4 vColor;
+        attribute vec2 vTexCoord;
+
+        uniform mat4 modelMatrix, viewMatrix;
+        uniform mat4 projectionMatrix;
+
+        varying vec2 fTexCoord;
+
+        varying vec3 fNormal,fWorldPos;
+        
+
+        void main() {
+            gl_Position = projectionMatrix * viewMatrix * modelMatrix * vPosition;
+
+            fNormal = normalize(mat3(modelMatrix) * vNormal.xyz);
+            fWorldPos = (modelMatrix * vPosition).xyz;
+
+            fTexCoord = vTexCoord;
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+        varying vec3 fNormal,fWorldPos;
+
+        uniform sampler2D texture;
+        varying vec2 fTexCoord;
+
+        uniform vec3 eyePos, kAtten, spotDir;
+        uniform vec4 lightSrc, ambientProduct, diffuseProduct,specularProduct;
+        uniform float matShininess, spotExp;
+        uniform float key_code;
+
+
+        void main() {
+
+            vec3 N = normalize(fNormal);
+            vec3 L=normalize(lightSrc.xyz);
+            float kd=max(dot(L,N),0.0); //l,n의 내적
+            vec4 diffuse=kd * diffuseProduct;
+
+            vec3 V= normalize(eyePos - fWorldPos);
+
+            vec3 H = normalize(L+V);
+            float ks=pow(max(dot(N,H),0.0),matShininess);//blinn 모델 참고
+            vec4 specular=ks* specularProduct;
+
+            if(key_code==1.0)
+                gl_FragColor=(ambientProduct+diffuse+specular) * texture2D(texture,fTexCoord);
+
+            else
+                gl_FragColor=(ambientProduct+diffuse+specular);
+            
+            
+            gl_FragColor.a=1.0;
+        }
+    </script>
+    <script type="text/javascript" src="../Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../Common/MV.js"></script>
+    <script type="text/javascript" src="../trackball.js"></script>
+    <script type="text/javascript" src="project.js"></script>
+</head>
+
+<body>
+    <div style="width: 800px; text-align: center;">
+        <input type="radio" id="mode1" name="lightingmode" checked>Lighting Mode 1
+        <input type="radio" id="mode2" name="lightingmode">Lighting Mode 2
+        <button id="change">Change</button>
+    </div>
+    <canvas id="gl-canvas" width="800" height="512">
+        Oops... your browser doesn't support the HTML5 canvas element!
+    </canvas>
+    <div style="width: 800px; text-align: center;">
+        <p id="key_code" style="margin-left:350px; margin-right: 350px; width: 100px;">Key Code</p>
+    </div>
+</body>
+</html>
